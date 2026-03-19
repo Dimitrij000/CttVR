@@ -14,8 +14,8 @@ public class UIController : MonoBehaviour
         settings = Settings.Load();
 
         // Загружаем значения в UI
-        inputDropdown.value = settings.Input;
-        orientationDropdown.value = settings.Orientation;
+        inputDropdown.value = (int)settings.Input;
+        orientationDropdown.value = (int)settings.Orientation;
 
         // Подписываемся на изменения
         inputDropdown.onValueChanged.AddListener(OnInputChanged);
@@ -24,13 +24,13 @@ public class UIController : MonoBehaviour
 
     void OnInputChanged(int value)
     {
-        settings.Input = value;
+        settings.Input = (CTT.Inputs.InputType)value;
         settings.Save();
     }
 
     void OnOrientationChanged(int value)
     {
-        settings.Orientation = value;
+        settings.Orientation = (Orientation)value;
         settings.Save();
     }
 

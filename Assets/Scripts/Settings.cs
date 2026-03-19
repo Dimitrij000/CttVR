@@ -1,6 +1,13 @@
-﻿using System;
+﻿using CTT.Inputs;
+using System;
 using System.IO;
 using UnityEngine;
+
+public enum Orientation
+{
+    Horizontal = 0,
+    Vertical = 1
+}
 
 [Serializable]
 public class Settings
@@ -15,8 +22,8 @@ public class Settings
     public double FieldSize;
     public double[] Lambdas;
 
-    public int Input;
-    public int Orientation;
+    public InputType Input;
+    public Orientation Orientation;
 
     public double KeyboardGain;
     public double OffsetGain;
