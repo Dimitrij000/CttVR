@@ -1,46 +1,280 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace CTT
 {
     public class Controller
     {
-        private float _offset = 0f;
-        private float _noisePhase = 0f;
-        private bool _isRunning = false;
+        public Orientation Orientation => _orientation;
+
+        public int LambdaIndex
+        {
+            get => _lambdaIndex;
+            set
+            {
+                if (_lambdaIndex >= 0 && _lambdaIndex < _settings.Lambdas.Length)
+                {
+                    _lambdaIndex = value;
+                    _lambda = _settings.Lambdas[_lambdaIndex];
+                }
+            }
+        }
+
+        public double Lambda => _lambda;
+
+        public bool IsRunning => _isRunning;
+        public bool IsServerReady => _server.IsListening;
+
+        public Color LineColor { get; private set; }
+        public double LineWidth { get; private set; }
+        public string TrackingDuration { get; private set; } = "";
+        public double ProperTrackingDuration { get; private set; } = 0;
+        public bool IsLongProperTracking { get; private set; } = false;
+        public bool IsTrackingTimerVisible => _isRunning && _settings.IsTrackingTimerVisible;
+        public bool IsProperTrackingTimerVisible => _isRunning && _settings.IsProperTrackingTimerVisible;
+
+        public event EventHandler<bool> IsRunningChanged;
+        public event EventHandler PositionUpdated;
+        public event EventHandler LinePropsChanged;
+        public event EventHandler<bool> ConnectionStatusChanged;
+
+
+        public Controller()
+        {
+            _orientation = _settings.Orientation;
+            //_settings.Updated += Settings_Updated;
+
+            _noisePhase = _random.NextDouble();
+
+            _lambda = _settings.Lambdas[_lambdaIndex];
+
+            _server.ClientConnected += (s, e) => ConnectionStatusChanged?.Invoke(this, true);
+            _server.ClientDisconnected += (s, e) => ConnectionStatusChanged?.Invoke(this, false);
+            _server.Data += Server_Data;
+
+            _server.Start();
+
+            LineColor = _settings.LineColor;
+            LineWidth = _settings.LineWidth;
+
+            Reset();
+        }
 
         public void Start()
         {
             _isRunning = true;
+
+            _logger.AddInfo("time", "lambda", "position", "input");
+
             Reset();
+
+            //_tonePlayer1.Start();
+            //_tonePlayer2.Start();
+
+            IsRunningChanged?.Invoke(this, true);
         }
 
-        public void Update(Vector2 input)
+        public void Stop()
+        {
+            _isRunning = false;
+
+            //_tonePlayer1.Stop();
+            //_tonePlayer2.Stop();
+
+            Reset();
+
+            IsRunningChanged?.Invoke(this, false);
+        }
+
+        /// <summary>
+        /// Updates line position based on input
+        /// </summary>
+        /// <param name="input">Input X and Y, normalized between -1 and 1</param>
+        public void Update(Point input)
         {
             if (!_isRunning)
                 return;
 
-            _noisePhase += 0.08f;
-            float noise =
-                (Mathf.Cos(_noisePhase) * 2 - 1) +
-                (Mathf.Cos(_noisePhase * 2) * 2 - 1) / 2;
+            _noisePhase += K_NOISE_PHASE_STEP;
+            var noise = (Math.Cos(_noisePhase) * 2 - 1) +
+                     (Math.Cos(_noisePhase * 2) * 2 - 1) / 2;
 
-            float speed =
-                (_offset * 0.1f +
-                 input.x * 1.0f +
-                 noise * 0.1f)
-                 * 0.5f;
+            var halfField = _settings.FieldSize / 2;
+            var inputValue = _orientation == Orientation.Horizontal ? input.X : input.Y;
+            var speed = (_offset * _settings.OffsetGain + inputValue * _settings.InputGain + noise * _settings.NoiseGain) * _lambda / halfField;
+            _offset = (_offset + speed).ToRange(-1, 1);
 
-            _offset = Mathf.Clamp(_offset + speed, -1f, 1f);
+            //_tonePlayer1.SetPitchFactor(_offset);
+            //_tonePlayer2.SetPitchFactor(_offset);
 
-            LineMover.Instance?.SetLinePosition(_offset);
+            var offsetPixels = _offset * halfField;
+            Debug.Log(offsetPixels);
+            MoveLine(offsetPixels);
+
+            var threshold = _settings.FarThreshold * (_settings.IsOldCTTBugEnabled ? 0.23 : 1);  // "* 0.23" is a re-implementation of a bug from old CTT
+            var isFar = Math.Abs(offsetPixels) > threshold;
+            if ((isFar && !_isFar) || (!isFar && _isFar))
+            {
+                UpdateDistanceCategory(isFar);
+            }
+
+            TrackingDuration = TimeSpan.FromSeconds((DateTime.Now.Ticks - _trackingStartTime) / 10_000_000).ToString();
+
+            if (Math.Abs(_offset) >= (_settings.FarThreshold / (_settings.FieldSize / 2))) // not properly tracking
+            {
+                _properTrackingStartTime = DateTime.Now.Ticks;
+                _lastProperTrackingDuration = 0;
+            }
+            else
+            {
+                _lastProperTrackingDuration = (DateTime.Now.Ticks - _properTrackingStartTime) / 10_000_000;
+            }
+
+            if (_lastProperTrackingDuration != ProperTrackingDuration)
+            {
+                ProperTrackingDuration = _lastProperTrackingDuration;
+
+                bool isLongProperTracking = ProperTrackingDuration >= _settings.ProperTrackingDurationThreshold;
+                if ((isLongProperTracking && !IsLongProperTracking) || (!isLongProperTracking && IsLongProperTracking))
+                {
+                    IsLongProperTracking = isLongProperTracking;
+                }
+            }
+
+            PositionUpdated?.Invoke(this, EventArgs.Empty);
+
+            _logger.Add(_lambda, _offset.ToString("F4"), inputValue.ToString("F4"));
         }
+
+        // Internal
+
+        const double K_NOISE_PHASE_STEP = 0.08;
+
+        readonly string NET_COMMAND_START = "start";
+        readonly string NET_COMMAND_STOP = "stop";
+        readonly string NET_COMMAND_GET_LAMBDAS = "lambdas";
+        readonly string NET_COMMAND_SET_LAMBDA = "lambda"; // followed by the index without a space/gap
+        readonly string NET_COMMAND_EXIT = "exit";
+
+        readonly System.Random _random = new();
+        readonly Settings _settings = Settings.Instance;
+        readonly Logger _logger = Logger.Instance;
+        readonly TcpServer _server = new();
+        readonly StringComparison _stringComparison = StringComparison.OrdinalIgnoreCase;
+
+        //TonePlayer _tonePlayer1 = TonePlayer.Load("TonePlayer1");
+        //TonePlayer _tonePlayer2 = TonePlayer.Load("TonePlayer2");
+
+        Orientation _orientation;
+        int _lambdaIndex = 0;
+        double _lambda;
+
+        bool _isRunning = false;
+
+        double _noisePhase;
+
+        double _ref = 0;
+
+        double _offset = 0;
+        long _trackingStartTime = 0;
+        long _properTrackingStartTime = 0;
+        double _lastProperTrackingDuration = 0;
+
+        bool _isFar = false;
 
         private void Reset()
         {
-            _offset = 0f;
-            _noisePhase = Random.value;
+            _noisePhase = _random.NextDouble();
 
-            LineMover.Instance?.SetLinePosition(0);
+            _ref = 0; // _settings.FieldSize / 2;
+            _offset = 0;
+
+            _properTrackingStartTime = DateTime.Now.Ticks;
+            _lastProperTrackingDuration = 0;
+            ProperTrackingDuration = 0;
+
+            _trackingStartTime = DateTime.Now.Ticks;
+            TrackingDuration = "0:00";
+
+            MoveLine(_ref);
+
+            PositionUpdated?.Invoke(this, EventArgs.Empty);
+
+            UpdateDistanceCategory(false);
+        }
+
+        private void MoveLine(double position)
+        {
+            if (_orientation == Orientation.Horizontal)
+            {
+                LineMover.Instance?.SetLinePositionY((float)position);
+            }
+            else
+            {
+                LineMover.Instance?.SetLinePositionX((float)position);
+                //System.Diagnostics.Debug.WriteLine($"Y={input.Y:F3} >> {_offset:F3} >> {LinePositionY:F3}");
+            }
+        }
+
+        private void UpdateDistanceCategory(bool isFar)
+        {
+            _isFar = isFar;
+
+            LineColor = _isFar ? _settings.FarLineColor : _settings.LineColor;
+            LineWidth = _isFar ? _settings.FarLineWidth : _settings.LineWidth;
+
+            LinePropsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        // Event handlers
+
+        private void Server_Data(object sender, string e)
+        {
+            if (e.Equals(NET_COMMAND_START, _stringComparison))
+            {
+                if (!IsRunning)
+                    Start();
+            }
+            else if (e.Equals(NET_COMMAND_STOP, _stringComparison))
+            {
+                if (IsRunning)
+                    Stop();
+            }
+            else if (e.Equals(NET_COMMAND_GET_LAMBDAS, _stringComparison))
+            {
+                _server.Send("LMB" + string.Join(";", _settings.Lambdas));
+            }
+            else if (e.StartsWith(NET_COMMAND_SET_LAMBDA, _stringComparison))
+            {
+                if (!IsRunning && int.TryParse(e.Substring(NET_COMMAND_SET_LAMBDA.Length).Trim(), out int index) &&
+                    index >= 0 && index < _settings.Lambdas.Length)
+                {
+                    LambdaIndex = index;
+                }
+            }
+            else if (e.Equals(NET_COMMAND_EXIT, _stringComparison))
+            {
+                if (IsRunning)
+                    Stop();
+                Application.Quit();
+            }
+        }
+
+        private void Settings_Updated(object sender, EventArgs e)
+        {
+            //_tonePlayer1.Dispose();
+            //_tonePlayer1 = TonePlayer.Load(_tonePlayer1.Name);
+
+            //_tonePlayer2.Dispose();
+            //_tonePlayer2 = TonePlayer.Load(_tonePlayer2.Name);
+
+            if (_orientation != _settings.Orientation)
+            {
+                _orientation = _settings.Orientation;
+                // TODO update orientation
+            }
+
+            Reset();
         }
     }
 }

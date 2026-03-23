@@ -106,6 +106,6 @@ namespace CTT
         static Logger _instance = null;
 
         readonly List<string> _records = new();
-        readonly Settings _settings = Settings.Load();
+        readonly Settings _settings = Settings.Instance;
     }
 }

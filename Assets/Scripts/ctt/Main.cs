@@ -1,22 +1,72 @@
-﻿using UnityEngine;
-using CTT;
+﻿using CTT;
+using SharpDX.DirectInput;
+using UnityEngine;
 
 public class CTTMain : MonoBehaviour
 {
-    private Controller controller;
-
     void Start()
     {
-        controller = new Controller();
-        controller.Start();
+        _settings = Settings.Instance;
     }
 
-    void Update()
+    private void OnDestroy()
     {
-        Vector3 mouse = Input.mousePosition;
+        if (_input != null)
+        {
+            _input.Updated -= Input_Updated;
+            _input= null;
+        }
+        if (_controller != null)
+        {
+            _controller.Stop();
+            _controller = null;
+        }
+    }
 
-        float x = (mouse.x / Screen.width) * 2f - 1f;
+    public void Run()
+    {
+        if (CreateInput())
+        {
+            _controller = new Controller();
+            _controller.Start();
+        }
+    }
 
-        controller.Update(new Vector2(x, 0));
+    // Internal
+
+    private Controller _controller;
+    private CTT.Inputs.Input _input;
+    private Settings _settings;
+
+    private bool CreateInput()
+    {
+        DeviceInstance[] inputDevices;
+
+        inputDevices = CTT.Inputs.Input.ListDevices(_settings.Input);
+        if (inputDevices.Length > 0)
+        {
+            if (_settings.Input == CTT.Inputs.InputType.Mouse)
+                _input = new CTT.Inputs.Mouse();
+            else if (_settings.Input == CTT.Inputs.InputType.Joystick)
+                _input = new CTT.Inputs.Joystick(0);
+            else if (_settings.Input == CTT.Inputs.InputType.Keyboard)
+                _input = new CTT.Inputs.Keyboard();
+        }
+        else
+        {
+            Debug.LogError($"Found no device of type '{_settings.Input}'. Please connect, or choose another input.");
+        }
+
+        if (_input != null)
+        {
+            _input.Updated += Input_Updated;
+        }
+
+        return _input != null;
+    }
+
+    private void Input_Updated(object sender, Point e)
+    {
+        _controller.Update(e);
     }
 }

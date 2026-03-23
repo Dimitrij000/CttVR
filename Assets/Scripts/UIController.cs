@@ -7,35 +7,37 @@ public class UIController : MonoBehaviour
     public Dropdown inputDropdown;
     public Dropdown orientationDropdown;
 
-    private Settings settings;
+    public CTTMain CttApp;
+
+    private Settings _settings;
 
     void Start()
     {
-        settings = Settings.Load();
+        _settings = Settings.Instance;
 
-        // Загружаем значения в UI
-        inputDropdown.value = (int)settings.Input;
-        orientationDropdown.value = (int)settings.Orientation;
-
-        // Подписываемся на изменения
+        inputDropdown.value = (int)_settings.Input;
         inputDropdown.onValueChanged.AddListener(OnInputChanged);
+
+        orientationDropdown.value = (int)_settings.Orientation;
         orientationDropdown.onValueChanged.AddListener(OnOrientationChanged);
     }
 
     void OnInputChanged(int value)
     {
-        settings.Input = (CTT.Inputs.InputType)value;
-        settings.Save();
+        _settings.Input = (CTT.Inputs.InputType)value;
+        _settings.Save();
     }
 
     void OnOrientationChanged(int value)
     {
-        settings.Orientation = (Orientation)value;
-        settings.Save();
+        _settings.Orientation = (Orientation)value;
+        _settings.Save();
     }
 
     public void OnStartPressed()
     {
         overlayPanel.SetActive(false);
+
+        CttApp.Run();
     }
 }

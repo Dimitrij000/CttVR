@@ -35,7 +35,7 @@ namespace CTT.Inputs
         static DeviceInstance[] _devices;
 
         readonly SharpDX.DirectInput.Keyboard _keyboard;
-        readonly Settings _settings = Settings.Load();
+        readonly Settings _settings = Settings.Instance;
 
         double _stepScale = 0.15;
 

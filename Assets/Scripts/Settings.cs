@@ -50,9 +50,7 @@ public class Settings
 
     public string LogFolder;
 
-    private static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ctt_settings.json");
+    public static Settings Instance => _settings ??= Load();
 
     public static Settings Load()
     {
@@ -64,11 +62,21 @@ public class Settings
                 FarLineColor = Color.gray,
                 BackgroundColor = Color.black,
 
-                LineWidth = 2,
-                FarLineWidth = 1,
+                LineWidth = 0.02,
+                FarLineWidth = 0.1,
                 FarThreshold = 0.5,
-                FieldSize = 10,
-                Lambdas = new double[] { 1, 2, 3 },
+                FieldSize = 1,
+                Lambdas = new double[] { 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 },
+
+                Input = InputType.Mouse,
+                Orientation = Orientation.Horizontal,
+
+                KeyboardGain = 1,
+                OffsetGain = 0.01,
+                InputGain = 0.11,
+                NoiseGain = 0.00001,
+
+                ProperTrackingDurationThreshold = 30,
 
                 LogFolder = Application.persistentDataPath
             };
@@ -83,4 +91,12 @@ public class Settings
         string json = JsonUtility.ToJson(this, true);
         File.WriteAllText(FilePath, json);
     }
+
+    // Inernal
+
+    private static string FilePath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "ctt_settings.json");
+
+    private static Settings _settings;
 }
