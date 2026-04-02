@@ -6,6 +6,8 @@ public class UIController : MonoBehaviour
     public GameObject overlayPanel;
     public Dropdown inputDropdown;
     public Dropdown orientationDropdown;
+    public Toggle isProperTrackingTimerVisible;
+    public InputField lineWidth;
 
     public CTTMain CttApp;
 
@@ -20,6 +22,19 @@ public class UIController : MonoBehaviour
 
         orientationDropdown.value = (int)_settings.Orientation;
         orientationDropdown.onValueChanged.AddListener(OnOrientationChanged);
+
+        lineWidth.text = _settings.LineWidth.ToString();
+        farLineWidth.text = _settings.FarLineWidth.ToString();
+        farThreshold.text = _settings.FarThreshold.ToString();
+        fieldSize.text = _settings.FieldSize.ToString();
+        keyboardGain.text = _settings.KeyboardGain.ToString();
+        offsetGain.text = _settings.OffsetGain.ToString();
+        inputGain.text = _settings.InputGain.ToString();
+        noiseGain.text = _settings.NoiseGain.ToString();
+        properTrackingDurationThreshold.text = _settings.ProperTrackingDurationThreshold.ToString();
+        isProperTrackingTimerVisible.isOn = _settings.IsProperTrackingTimerVisible;
+        isTrackingTimerVisible.isOn = _settings.isTrackingTimerVisible;
+        isOldCTTBugEnabled.isOn = _settings.isOldCTTBugEnabled;
     }
 
     void OnInputChanged(int value)
@@ -37,6 +52,20 @@ public class UIController : MonoBehaviour
     public void OnStartPressed()
     {
         overlayPanel.SetActive(false);
+
+        _settings.LineWidth = double.Parse(lineWidth.text);
+        _settings.FarLineWidth = double.Parse(farLineWidth.text);
+        _settings.FarThreshold = double.Parse(farThreshold.text);
+        _settings.FieldSize = double.Parse(fieldSize.text);
+        _settings.KeyboardGain = double.Parse(keyboardGain.text);
+        _settings.OffsetGain = double.Parse(offsetGain.text);
+        _settings.InputGain = double.Parse(inputGain.text);
+        _settings.NoiseGain = double.Parse(noiseGain.text);
+        _settings.ProperTrackingDurationThreshold = int.Parse(properTrackingDurationThreshold.text);
+        _settings.IsProperTrackingTimerVisible = isProperTrackingTimerVisible.isOn;
+        _settings.IsTrackingTimerVisible = isTrackingTimerVisible.isOn;
+        _settings.IsOldCTTBugEnabled = isOldCTTBugEnabled.isOn;
+
 
         CttApp.Run();
     }
