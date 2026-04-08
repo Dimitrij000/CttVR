@@ -207,11 +207,11 @@ namespace CTT
         {
             if (_orientation == Orientation.Horizontal)
             {
-                LineMover.Instance?.SetLinePositionY((float)position);
+                LineController.Instance?.SetLinePositionY((float)position);
             }
             else
             {
-                LineMover.Instance?.SetLinePositionX((float)position);
+                LineController.Instance?.SetLinePositionX((float)position);
                 //System.Diagnostics.Debug.WriteLine($"Y={input.Y:F3} >> {_offset:F3} >> {LinePositionY:F3}");
             }
         }
@@ -224,6 +224,7 @@ namespace CTT
             LineWidth = _isFar ? _settings.FarLineWidth : _settings.LineWidth;
 
             LinePropsChanged?.Invoke(this, EventArgs.Empty);
+            LineController.Instance.UpdateLine(LineColor, (float)LineWidth);
         }
 
         // Event handlers

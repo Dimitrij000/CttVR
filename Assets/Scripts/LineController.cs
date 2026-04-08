@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using UnityEngine;
 
-public class LineMover : MonoBehaviour
+public class LineController : MonoBehaviour
 {
-    public static LineMover Instance;
+    public static LineController Instance;
 
     public Transform line;
 
@@ -33,6 +33,21 @@ public class LineMover : MonoBehaviour
         _context.Post(_ =>
         {
             line.localPosition = new Vector3(line.localPosition.x, y, line.localPosition.z);
+        }, null);
+    }
+
+    public void UpdateLine(Color color, float width)
+    {
+        if (line == null) return;
+
+        _context.Post(_ =>
+        {
+            line.GetComponent<MeshRenderer>().material.color = color;
+            line.localScale = new Vector3(
+                line.localScale.x,
+                width,
+                line.localScale.z
+            );
         }, null);
     }
 }

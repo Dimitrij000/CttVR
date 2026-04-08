@@ -1,47 +1,36 @@
-﻿using UnityEngine;
+﻿using CTT;
+using UnityEngine;
 
 public class FieldController : MonoBehaviour
 {
     public Transform line;
     public Transform centralLine;
 
-    // Новые линии
     public Transform thresholdLine1;
     public Transform thresholdLine2;
 
-    void Start()
+    public void SetUp(Settings settings)
     {
-        var settings = Settings.Instance;
-
-        // Масштаб поля
         transform.localScale = new Vector3(
             (float)settings.FieldSize / 10f,
-            1,
+            transform.localScale.y,
             (float)settings.FieldSize / 10f
         );
+        transform.GetComponent<MeshRenderer>().material.color = settings.BackgroundColor;
 
-        // Цвет фона
-        var renderer = GetComponent<MeshRenderer>();
-        if (renderer != null)
-            renderer.material.color = settings.BackgroundColor;
-
-        // Основная линия
         line.localScale = new Vector3(
             (float)settings.FieldSize,
             (float)settings.LineWidth,
-            0.1f
+            line.localScale.z
         );
         line.GetComponent<MeshRenderer>().material.color = settings.LineColor;
 
-        // Центральная линия
         centralLine.localScale = new Vector3(
             (float)settings.FieldSize,
             (float)settings.LineWidth,
-            0.1f
+            centralLine.localScale.z
         );
-        centralLine.GetComponent<MeshRenderer>().material.color = settings.LineColor;
 
-        // Threshold линии
         SetupThresholdLine(thresholdLine1, 0.25f, settings);
         SetupThresholdLine(thresholdLine2, 0.75f, settings);
     }
@@ -50,20 +39,9 @@ public class FieldController : MonoBehaviour
     {
         if (t == null) return;
 
-        // Ширина (высота) линии
-        t.localScale = new Vector3(
-            (float)settings.FieldSize,
-            (float)settings.FarLineWidth,
-            0.1f
-        );
-
-        // Цвет
-        t.GetComponent<MeshRenderer>().material.color = settings.FarLineColor;
-
-        // Позиция по высоте
         t.localPosition = new Vector3(
+            (heightFactor - 0.5f) * 10,
             0,
-            (heightFactor - 0.5f) * (float)settings.FieldSize,
             0
         );
     }

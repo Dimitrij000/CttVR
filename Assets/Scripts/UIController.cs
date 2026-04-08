@@ -21,7 +21,6 @@ public class UIController : MonoBehaviour
     public InputField properTrackingDurationThreshold;
     public InputField lambdas;
 
-    // Цвета в формате R,G,B
     public InputField lineColor;
     public InputField farLineColor;
     public InputField backgroundColor;
@@ -51,7 +50,6 @@ public class UIController : MonoBehaviour
         properTrackingDurationThreshold.text = _settings.ProperTrackingDurationThreshold.ToString();
         lambdas.text = string.Join(" ", _settings.Lambdas);
 
-        // Загружаем цвета в формате R,G,B
         lineColor.text = ColorToString(_settings.LineColor);
         farLineColor.text = ColorToString(_settings.FarLineColor);
         backgroundColor.text = ColorToString(_settings.BackgroundColor);
@@ -88,7 +86,6 @@ public class UIController : MonoBehaviour
         _settings.ProperTrackingDurationThreshold = int.Parse(properTrackingDurationThreshold.text);
         _settings.Lambdas = lambdas.text.Split(" ").Select(v => double.Parse(v)).ToArray();
 
-        // Парсим цвета
         _settings.LineColor = ParseColor(lineColor.text);
         _settings.FarLineColor = ParseColor(farLineColor.text);
         _settings.BackgroundColor = ParseColor(backgroundColor.text);
@@ -102,13 +99,9 @@ public class UIController : MonoBehaviour
         CttApp.Run();
     }
 
-    // -----------------------------
-    // Вспомогательные методы
-    // -----------------------------
-
     private Color ParseColor(string text)
     {
-        // Формат: "R,G,B"
+        // "R,G,B"
         var parts = text.Split(',');
         if (parts.Length != 3)
             return Color.white;

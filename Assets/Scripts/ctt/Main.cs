@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CTTMain : MonoBehaviour
 {
+    public FieldController fieldController;
+
     void Start()
     {
         _settings = Settings.Instance;
@@ -27,11 +29,12 @@ public class CTTMain : MonoBehaviour
     {
         if (CreateInput())
         {
+            fieldController.SetUp(_settings);
+
             _controller = new Controller();
             _controller.Start();
         }
     }
-
     // Internal
 
     private Controller _controller;
