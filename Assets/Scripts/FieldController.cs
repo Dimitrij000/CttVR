@@ -12,9 +12,9 @@ public class FieldController : MonoBehaviour
     public void SetUp(Settings settings)
     {
         transform.localScale = new Vector3(
-            (float)settings.FieldSize / 10f,
+            (float)settings.FieldSize / FieldSizeFactor,
             transform.localScale.y,
-            (float)settings.FieldSize / 10f
+            (float)settings.FieldSize / FieldSizeFactor
         );
         transform.GetComponent<MeshRenderer>().material.color = settings.BackgroundColor;
 
@@ -31,16 +31,20 @@ public class FieldController : MonoBehaviour
             centralLine.localScale.z
         );
 
-        SetupThresholdLine(thresholdLine1, 0.25f, settings);
-        SetupThresholdLine(thresholdLine2, 0.75f, settings);
+        SetupThresholdLine(thresholdLine1, 0.5 - settings.FarThreshold / 2);
+        SetupThresholdLine(thresholdLine2, 0.5 + settings.FarThreshold / 2);
     }
 
-    private void SetupThresholdLine(Transform t, float heightFactor, Settings settings)
+    // Internal
+
+    const float FieldSizeFactor = 10f;  // some weird factor to convert field size to Unity units
+
+    private void SetupThresholdLine(Transform t, double heightFactor)
     {
         if (t == null) return;
 
         t.localPosition = new Vector3(
-            (heightFactor - 0.5f) * 10,
+            (float)(heightFactor - 0.5) * FieldSizeFactor,
             0,
             0
         );

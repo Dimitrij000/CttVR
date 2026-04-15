@@ -111,7 +111,7 @@ namespace CTT
             Debug.Log(offsetPixels);
             MoveLine(offsetPixels);
 
-            var threshold = _settings.FarThreshold * (_settings.IsOldCTTBugEnabled ? 0.23 : 1);  // "* 0.23" is a re-implementation of a bug from old CTT
+            var threshold = (_settings.FarThreshold * _settings.FieldSize / 2) * (_settings.IsOldCTTBugEnabled ? 0.23 : 1);  // "* 0.23" is a re-implementation of a bug from old CTT
             var isFar = Math.Abs(offsetPixels) > threshold;
             if ((isFar && !_isFar) || (!isFar && _isFar))
             {
