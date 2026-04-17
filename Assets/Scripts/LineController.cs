@@ -42,7 +42,7 @@ public class LineController : MonoBehaviour
 
         _context.Post(_ =>
         {
-            line.GetComponent<MeshRenderer>().material.color = color;
+            line.GetComponent<MeshRenderer>().sharedMaterial.color = color;
             line.localScale = new Vector3(
                 line.localScale.x,
                 width,
