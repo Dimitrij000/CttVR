@@ -5,49 +5,53 @@ public class LineController : MonoBehaviour
 {
     public static LineController Instance;
 
-    public Transform line;
-
     private SynchronizationContext _context;
+    private MeshRenderer _meshRenderer;
 
     void Awake()
     {
         Instance = this;
 
         _context = SynchronizationContext.Current;
+        _meshRenderer = GetComponent<MeshRenderer>();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Instance = null;
     }
 
     public void SetLinePositionX(float x)
     {
-        if (line == null) return;
-
         _context.Post(_ =>
         {
-            line.localPosition = new Vector3(x, line.localPosition.y, line.localPosition.z);
+            if (Instance != null)
+                transform.localPosition = new Vector3(x, transform.localPosition.y, transform.localPosition.z);
         }, null);
     }
 
     public void SetLinePositionY(float y)
     {
-        if (line == null) return;
-
         _context.Post(_ =>
         {
-            line.localPosition = new Vector3(line.localPosition.x, y, line.localPosition.z);
+            if (Instance != null)
+                transform.localPosition = new Vector3(transform.localPosition.x, y, transform.localPosition.z);
         }, null);
     }
 
     public void UpdateLine(Color color, float width)
     {
-        if (line == null) return;
-
         _context.Post(_ =>
         {
-            line.GetComponent<MeshRenderer>().sharedMaterial.color = color;
-            line.localScale = new Vector3(
-                line.localScale.x,
-                width,
-                line.localScale.z
-            );
+            if (Instance != null)
+            {
+                _meshRenderer.sharedMaterial.color = color;
+                transform.localScale = new Vector3(
+                    transform.localScale.x,
+                    width,
+                    transform.localScale.z
+                );
+            }
         }, null);
     }
 }

@@ -108,7 +108,7 @@ namespace CTT
             //_tonePlayer2.SetPitchFactor(_offset);
 
             var offsetPixels = _offset * halfField;
-            Debug.Log(offsetPixels);
+            //Debug.Log(offsetPixels);
             MoveLine(offsetPixels);
 
             var threshold = (_settings.FarThreshold * _settings.FieldSize / 2) * (_settings.IsOldCTTBugEnabled ? 0.23 : 1);  // "* 0.23" is a re-implementation of a bug from old CTT
@@ -224,7 +224,7 @@ namespace CTT
             LineWidth = _isFar ? _settings.FarLineWidth : _settings.LineWidth;
 
             LinePropsChanged?.Invoke(this, EventArgs.Empty);
-            LineController.Instance.UpdateLine(LineColor, (float)LineWidth);
+            LineController.Instance?.UpdateLine(LineColor, (float)LineWidth);
         }
 
         // Event handlers

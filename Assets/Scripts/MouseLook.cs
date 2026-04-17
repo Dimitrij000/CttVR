@@ -24,6 +24,7 @@ public class MouseLook : MonoBehaviour
                 _isMouseDown = true;
                 _mouseDownX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
                 _mouseDownY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
+
                 return;
             }
             else
@@ -31,7 +32,6 @@ public class MouseLook : MonoBehaviour
                 float mouseX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
                 float mouseY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
 
-                // вертикальный поворот камеры
                 xRotation -= mouseY - _mouseDownY;
                 xRotation = Mathf.Clamp(xRotation, -90f, 90f);
                 yRotation += mouseX - _mouseDownX;
